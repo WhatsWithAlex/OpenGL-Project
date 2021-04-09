@@ -22,21 +22,18 @@ GLfloat last_x, last_y;
 bool first = true;
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
-	
 	if (first) 
 	{
-		last_x = SCR_WIDTH / 2;
-		last_y = SCR_HEIGHT / 2;
+		last_x = xpos;
+		last_y = ypos;
 		first = false;
 	}
 	GLfloat offset_x = xpos - last_x;
 	GLfloat offset_y = ypos - last_y;
 	last_x = xpos;
 	last_y = ypos;
-	
-	glm::vec3 axis = -glm::vec3(offset_y, offset_x, 0.0f);
-	GLfloat angle = glm::length(axis);
-	camera.rotate(camera.sensitivity * glm::radians(angle), glm::normalize(axis));
+
+	camera.processMouse(offset_x, offset_y);
 }
 
 void processInputEvents(GLFWwindow* window) 
@@ -280,7 +277,7 @@ int main()
 		shader.setUniform("view", camera.getLookAt());
 		
 		glBindVertexArray(vertex_array);
-		for (int i = 0; i < 1; ++i) 
+		for (int i = 0; i < 10; ++i) 
 		{
 			glm::mat4 model(1.0);
 			model = glm::translate(model, cube_positions[i]);

@@ -13,6 +13,7 @@ class Camera
 	glm::vec3 position, direction, up, right, target;
 	glm::mat4 look_at;
 	GLfloat speed, sensitivity;
+	GLfloat pitch, yaw;
 	bool target_locked;
 	void changeLookAt();
 public:
@@ -28,6 +29,7 @@ public:
 	void rotate(GLfloat angle, glm::vec3 axis);
 	void processKeyboard(GLFWwindow *window);
 	friend void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+	void processMouse(GLfloat offset_x, GLfloat offset_y);
 	void processScroll(GLFWwindow* window);
 	bool isLocked();
 	glm::vec3 getPos();
@@ -42,7 +44,7 @@ void Camera::changeLookAt() {
 		else 
 			direction = glm::vec3(0.0, 0.0, 1.0);
 		
-	if (abs(glm::dot(direction, global_up)) <= 0.99f) 
+	if (abs(glm::dot(direction, global_up)) <= 0.99999f) 
 	{
 		right = glm::normalize(glm::cross(global_up, -direction));
 		up = glm::cross(-direction, right);
@@ -84,10 +86,24 @@ void Camera::lockOnTarget(glm::vec3 new_target) { target = new_target; target_lo
 void Camera::lock() { target_locked = true; }
 void Camera::unlock() { target_locked = false; direction = glm::normalize(position - target); }
 void Camera::changeLock() 
-{ 
+{
 	target_locked = !target_locked;
 	if (!target_locked)
 		direction = glm::normalize(position - target);
+}
+void Camera::processMouse(GLfloat offset_x, GLfloat offset_y) {
+	yaw += sensitivity * offset_x;
+	pitch -= sensitivity * offset_y;
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = 89.0f;
+	glm::vec3 dir;
+	dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	dir.y = sin(glm::radians(pitch));
+	dir.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction = glm::normalize(dir);
+	changeLookAt();
 }
 void Camera::processKeyboard(GLFWwindow *window) 
 {
