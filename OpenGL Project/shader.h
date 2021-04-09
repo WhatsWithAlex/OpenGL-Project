@@ -59,7 +59,7 @@ Shader::Shader(std::string vertex_shader_path, std::string fragment_shader_path)
 		vertex_shader_src_s = vertex_shader_stream.str();
 		fragment_shader_src_s = fragment_shader_stream.str();
 	} 
-	catch (std::ifstream::failure & e) 
+	catch (std::ifstream::failure &a) 
 	{
 		std::cout << "Error opening file!\n";
 	};

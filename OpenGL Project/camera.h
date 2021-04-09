@@ -13,11 +13,10 @@ class Camera
 	glm::vec3 position, direction, up, right, target;
 	glm::mat4 look_at;
 	GLfloat speed, sensitivity;
-	GLfloat last_x, last_y;
 	bool target_locked;
 	void changeLookAt();
 public:
-	Camera(glm::vec3 position, glm::vec3 direction, bool target_locked, GLfloat speed, GLfloat sensitivity = 0.05f);
+	Camera(glm::vec3 position, glm::vec3 direction, bool target_locked, GLfloat speed, GLfloat sensitivity);
 	void setPos(glm::vec3 new_position);
 	void setDir(glm::vec3 new_direction);
 	void setTarget(glm::vec3 new_target);
@@ -28,9 +27,7 @@ public:
 	void move(glm::vec3 shift);
 	void rotate(GLfloat angle, glm::vec3 axis);
 	void processKeyboard(GLFWwindow *window);
-	void freeMouse(GLFWwindow* window);
-	void captureMouse(GLFWwindow* window);
-	void processMouse(GLFWwindow* window, double xpos, double ypos);
+	friend void mouseCallback(GLFWwindow* window, double xpos, double ypos);
 	void processScroll(GLFWwindow* window);
 	bool isLocked();
 	glm::vec3 getPos();
@@ -99,26 +96,13 @@ void Camera::processKeyboard(GLFWwindow *window)
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
 		position -= speed * direction;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		position -= glm::normalize(glm::cross(direction, up)) * speed;
+		position -= right * speed;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		position += glm::normalize(glm::cross(direction, up)) * speed;
-	position -= speed * direction;
-
-	changeLookAt();
-}
-void Camera::freeMouse(GLFWwindow* window) { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL); }
-void Camera::captureMouse(GLFWwindow* window) { glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); glfwSetCursorPosCallback(window, processMouse); }
-void Camera::processMouse(GLFWwindow* window, double xpos, double ypos)
-{
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		position += speed * direction;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		position -= speed * direction;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		position -= glm::normalize(glm::cross(direction, up)) * speed;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		position += glm::normalize(glm::cross(direction, up)) * speed;
-	position -= speed * direction;
+		position += right * speed;
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+		position += up * speed;
+	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		position -= up * speed;
 
 	changeLookAt();
 }

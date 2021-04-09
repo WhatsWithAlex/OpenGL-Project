@@ -9,12 +9,34 @@
 #include "shader.h"
 #include "camera.h"
 
-#define SCR_WIDTH 600
-#define SCR_HEIGHT 600
+#define SCR_WIDTH 500
+#define SCR_HEIGHT 500
 
 void framebufferSizeCallback(GLFWwindow* window, GLint width, GLint height) 
 {
 	glViewport(0, 0, width, height);
+}
+
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), false);
+GLfloat last_x, last_y;
+bool first = true;
+void mouseCallback(GLFWwindow* window, double xpos, double ypos)
+{
+	
+	if (first) 
+	{
+		last_x = SCR_WIDTH / 2;
+		last_y = SCR_HEIGHT / 2;
+		first = false;
+	}
+	GLfloat offset_x = xpos - last_x;
+	GLfloat offset_y = ypos - last_y;
+	last_x = xpos;
+	last_y = ypos;
+	
+	glm::vec3 axis = -glm::vec3(offset_y, offset_x, 0.0f);
+	GLfloat angle = glm::length(axis);
+	camera.rotate(camera.sensitivity * glm::radians(angle), glm::normalize(axis));
 }
 
 void processInputEvents(GLFWwindow* window) 
@@ -49,6 +71,8 @@ GLFWwindow* initGLFWWindow(GLuint width, GLuint height)
 	}
 	glViewport(0, 0, width, height);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	glfwSetCursorPosCallback(window, mouseCallback);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	return window;
 }
@@ -232,7 +256,6 @@ int main()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, texture2);
 
-	Camera camera(glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0), true);
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	glm::mat4 projection;
