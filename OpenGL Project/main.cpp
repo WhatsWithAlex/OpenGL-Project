@@ -13,6 +13,20 @@
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 800
 
+struct Material 
+{
+	Texture2D diffuse_map;
+	Texture2D specular_map;
+	GLfloat shininess;
+};
+struct Light 
+{
+	glm::vec3 pos;
+	glm::vec3 ambient_intensity;
+	glm::vec3 diffuse_intensity;
+	glm::vec3 specular_intensity;
+};
+
 void framebufferSizeCallback(GLFWwindow *window, GLint width, GLint height) 
 {
 	glViewport(0, 0, width, height);
@@ -40,6 +54,8 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 void processInputEvents(GLFWwindow *window) 
 {
 	camera.processKeyboard(window);
+	if (GLFW_MOUSE_BUTTON_1 == GLFW_PRESS)
+		camera.changeLock();
 }
 
 GLFWwindow *initGLFWWindow(GLuint width, GLuint height) 
@@ -84,9 +100,24 @@ int main()
 	Shader shader("vertex.vsh", "fragment.fsh"), light_shader("vertex_light.vsh", "fragment_light.fsh");
 	
 	// Загрузка текстур
-	Texture2D texture1("Textures/sand_bricks.jpg"), texture2("Textures/aluminium.jpg");
+	Texture2D diffuse_map("Textures/wall/wall_diffuse.jpg"), specular_map("Textures/wall/wall_specular.jpg");
 
-	GLfloat R = 0.5, G = 0.5, B = 0.5, T = 0.0;
+	// Создание материала
+	Material material = {
+		diffuse_map, 
+		specular_map,
+		32.0f
+	};
+	
+	// Создание источника света
+	Light light = {
+		glm::vec3(0.0f),
+		glm::vec3(0.02f, 0.02f, 0.03f),
+		glm::vec3(0.7f, 0.7f, 0.8f),
+		glm::vec3(1.0f, 1.0f, 1.0f)
+	};
+
+	GLfloat T = 0.0f;
 	GLfloat cube[] = {
 		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f,  0.0f, -1.0f,
 		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f,  0.0f, -1.0f,
@@ -155,7 +186,6 @@ int main()
 		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f,
 	};
 
-	glm::vec3 light_pos(1.0f, 2.0f, -3.0f);
 	glm::vec3 cube_positions[] = {
 		glm::vec3(0.0f,  0.0f,  0.0f),
 		glm::vec3(2.0f,  5.0f, -15.0f),
@@ -204,7 +234,6 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	glm::vec3 light_color = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	glm::mat4 projection, view;
@@ -212,16 +241,19 @@ int main()
 	glm::mat3 normal_matrix;
 
 	shader.use();
-	shader.setUniform("light_color", light_color);
 	shader.setUniform("projection", projection);
-	shader.setUniform("texture1", 0);
-	shader.setUniform("texture2", 1);
+	shader.setUniform("material.diffuse_map", 0);
+	shader.setUniform("material.specular_map", 1);
+	shader.setUniform("material.shininess", material.shininess);
+	shader.setUniform("light.ambient_intensity", light.ambient_intensity);
+	shader.setUniform("light.diffuse_intensity", light.diffuse_intensity);
+	shader.setUniform("light.specular_intensity", light.specular_intensity);
 
-	texture1.active(GL_TEXTURE0);
-	texture2.active(GL_TEXTURE1);
+	material.diffuse_map.active(GL_TEXTURE0);
+	material.specular_map.active(GL_TEXTURE1);
 
 	light_shader.use();
-	light_shader.setUniform("light_color", light_color);
+	light_shader.setUniform("light_color", light.diffuse_intensity);
 	light_shader.setUniform("projection", projection);
 
 	glEnable(GL_DEPTH_TEST);
@@ -235,12 +267,12 @@ int main()
 		glClearColor(0.0f, 0.01f, 0.03f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		light_pos = glm::vec3(2.0f, 3.0f * sin(T / 2), 3.0f * cos(T / 2));
+		light.pos = glm::vec3(2.0f, 3.0f * sin(T / 2), 3.0f * cos(T / 2));
 
 		// Объекты
 		shader.use();
 
-		shader.setUniform("light_position", light_pos);
+		shader.setUniform("light.pos", light.pos);
 
 		view = camera.getLookAt();
 		shader.setUniform("view", view);
@@ -258,7 +290,7 @@ int main()
 		light_shader.use();
 		light_shader.setUniform("view", camera.getLookAt());
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, light_pos);
+		model = glm::translate(model, light.pos);
 		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
 		light_shader.setUniform("model", model);
 
