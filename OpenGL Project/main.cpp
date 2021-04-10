@@ -38,12 +38,7 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 
 void processInputEvents(GLFWwindow* window) 
 {
-	if (glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS) 
-	{
-		glClearColor(1.0, 1.0, 1.0, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glfwSwapBuffers(window);
-	}
+	camera.processKeyboard(window);
 }
 
 GLFWwindow* initGLFWWindow(GLuint width, GLuint height) 
@@ -68,8 +63,8 @@ GLFWwindow* initGLFWWindow(GLuint width, GLuint height)
 	}
 	glViewport(0, 0, width, height);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-	glfwSetCursorPosCallback(window, mouseCallback);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouseCallback);
 
 	return window;
 }
@@ -180,8 +175,6 @@ int main()
 		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
-	//-0.5, -0.5,  0.5,  0.0, 0.0,
-	// 0.5, -0.5,  0.5,  0.0, 0.0,
 	GLfloat pyramid[] = {
 		 0.0,  0.2,  0.0,  0.3, 1.0,
 		-0.5, -0.5, -0.5,  1.0, 0.0,
@@ -265,7 +258,6 @@ int main()
 	while (!glfwWindowShouldClose(window))
 	{
 		processInputEvents(window);
-		camera.processKeyboard(window);
 
 		T += 0.05;
 		glClearColor(0.54, 0.78, 1.0, 1.0f);

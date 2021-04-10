@@ -7,6 +7,7 @@
 
 glm::vec3 global_up(0.0, 1.0, 0.0);
 glm::vec3 global_right(1.0, 0.0, 0.0);
+glm::vec3 global_forward(0.0, 0.0, 1.0);
 
 class Camera 
 {
@@ -38,21 +39,18 @@ public:
 };
 
 void Camera::changeLookAt() {
-	if (target_locked)
-		if (position != target) 
+	if (target_locked && (position != target))
 			direction = -glm::normalize(position - target);
-		else 
-			direction = glm::vec3(0.0, 0.0, 1.0);
 		
 	if (abs(glm::dot(direction, global_up)) <= 0.99999f) 
 	{
-		right = glm::normalize(glm::cross(global_up, -direction));
+		right = glm::normalize(glm::cross(direction, global_up));
 		up = glm::cross(-direction, right);
 	} 
 	else 
 	{
-		up = glm::normalize(glm::cross(-direction, global_right));
-		right = -glm::cross(-direction, up);
+		right = glm::normalize(glm::cross(direction, global_right));
+		up = glm::cross(-direction, right);
 	}
 	glm::mat4 translation = glm::mat4(1.0f); 
 	translation[3][0] = -position.x; 
@@ -77,6 +75,8 @@ Camera::Camera(glm::vec3 position = glm::vec3(0.0, 0.0, 0.0), glm::vec3 target =
 		direction = -glm::normalize(position - target);
 	else
 		direction = glm::vec3(0.0, 0.0, 1.0);
+	yaw = glm::degrees(glm::asin(glm::dot(direction, global_forward)));
+	pitch = glm::degrees(glm::asin(glm::dot(direction, global_up)));
 	changeLookAt();
 }
 void Camera::setPos(glm::vec3 new_position) { position = new_position; }
@@ -97,7 +97,7 @@ void Camera::processMouse(GLfloat offset_x, GLfloat offset_y) {
 	if (pitch > 89.0f)
 		pitch = 89.0f;
 	if (pitch < -89.0f)
-		pitch = 89.0f;
+		pitch = -89.0f;
 	glm::vec3 dir;
 	dir.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
 	dir.y = sin(glm::radians(pitch));
