@@ -84,7 +84,7 @@ int main()
 	Shader shader("vertex.vsh", "fragment.fsh"), light_shader("vertex_light.vsh", "fragment_light.fsh");
 	
 	// Загрузка текстур
-	Texture2D texture1("Textures/sand_bricks.jpg"), texture2("Textures/texture.jpg");
+	Texture2D texture1("Textures/sand_bricks.jpg"), texture2("Textures/aluminium.jpg");
 
 	GLfloat R = 0.5, G = 0.5, B = 0.5, T = 0.0;
 	GLfloat cube[] = {
@@ -179,7 +179,7 @@ int main()
 
 	glBindVertexArray(vertex_array);
 	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube), cube, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(pyramid), pyramid, GL_STATIC_DRAW);
 
 	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
 	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), indexes, GL_STATIC_DRAW);
@@ -212,7 +212,6 @@ int main()
 	glm::mat3 normal_matrix;
 
 	shader.use();
-	shader.setUniform("light_position", light_pos);
 	shader.setUniform("light_color", light_color);
 	shader.setUniform("projection", projection);
 	shader.setUniform("texture1", 0);
@@ -236,20 +235,24 @@ int main()
 		glClearColor(0.0f, 0.01f, 0.03f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		light_pos = glm::vec3(2.0f, 3.0f * sin(T / 2), 3.0f * cos(T / 2));
+
 		// Объекты
 		shader.use();
+
+		shader.setUniform("light_position", light_pos);
 
 		view = camera.getLookAt();
 		shader.setUniform("view", view);
 		
 		model = glm::mat4(1.0f);
-		model = glm::rotate(model, T, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, T / 2, glm::vec3(0.0f, 1.0f, 0.0f));
 		shader.setUniform("model", model);
 		normal_matrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
 		shader.setUniform("normal_matrix", normal_matrix);
 
 		glBindVertexArray(vertex_array);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glDrawArrays(GL_TRIANGLES, 0, 18);
 
 		// Освещение
 		light_shader.use();

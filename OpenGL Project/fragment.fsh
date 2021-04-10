@@ -23,5 +23,11 @@ void main()
 	float diffuse = max(dot(light_dir, normal), 0.0);
 	vec3 diffuse_light = diffuse * light_color;
 
-	frag_color = vec4((ambient_light + diffuse_light), 1.0) * texture(texture1, vert_tex_coords);
+	float specular_scale = 0.3;
+	vec3 view_dir = -normalize(frag_pos);
+	vec3 reflect_dir = reflect(-light_dir, normal);
+	float specular = pow(max(dot(view_dir, reflect_dir), 0.0), 32);
+	vec3 specular_light = specular * light_color;
+
+	frag_color = vec4((ambient_light + diffuse_light + specular_light), 1.0) * texture(texture2, vert_tex_coords);
 }
