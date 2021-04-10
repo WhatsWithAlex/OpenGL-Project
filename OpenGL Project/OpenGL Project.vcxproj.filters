@@ -46,10 +46,14 @@
     <FxCompile Include="vertex.vsh">
       <Filter>Исходные файлы</Filter>
     </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="fragment.fsh">
+    <FxCompile Include="vertex_light.vsh">
       <Filter>Исходные файлы</Filter>
-    </None>
+    </FxCompile>
+    <FxCompile Include="fragment.fsh">
+      <Filter>Исходные файлы</Filter>
+    </FxCompile>
+    <FxCompile Include="fragment_light.fsh">
+      <Filter>Исходные файлы</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

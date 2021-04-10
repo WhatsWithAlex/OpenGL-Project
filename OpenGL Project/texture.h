@@ -24,7 +24,7 @@ Texture2D::Texture2D(std::string path, GLint par1 = GL_REPEAT, GLint par2 = GL_R
 	: gen_mipmap(gen_mipmap)
 {
 	stbi_set_flip_vertically_on_load(true);
-	data = stbi_load("Textures/texture.jpg", &width, &height, &nr_channels, 0);
+	data = stbi_load(path.c_str(), &width, &height, &nr_channels, 0);
 	if (data == nullptr)
 	{
 		std::cout << "Texture loading error\n";
@@ -45,7 +45,7 @@ Texture2D::Texture2D(std::string path, GLint par1 = GL_REPEAT, GLint par2 = GL_R
 }
 void Texture2D::load(std::string path)
 {
-	data = stbi_load("Textures/texture.jpg", &width, &height, &nr_channels, 0);
+	data = stbi_load(path.c_str(), &width, &height, &nr_channels, 0);
 	if (data == nullptr)
 	{
 		std::cout << "Texture loading error\n";
