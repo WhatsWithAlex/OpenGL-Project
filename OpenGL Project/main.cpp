@@ -8,6 +8,7 @@
 #include "stb_image.h"
 #include "shader.h"
 #include "camera.h"
+#include "texture.h"
 
 #define SCR_WIDTH 500
 #define SCR_HEIGHT 500
@@ -81,49 +82,9 @@ int main()
 
 	// Компиляция шейдеров
 	Shader shader("vertex.vsh", "fragment.fsh");
-
 	
-	GLint width, height, nr_channels;
-	GLubyte* texture_data;
-	GLuint texture1, texture2;
-
-	stbi_set_flip_vertically_on_load(true);
-
-	// Загрузка текстуры 1
-	texture_data = stbi_load("Textures/texture.jpg", &width, &height, &nr_channels, 0);
-	if (texture_data == nullptr) 
-	{
-		std::cout << "Texture loading error\n";
-		return -1;
-	}
-
-	glGenTextures(1, &texture1);
-	glBindTexture(GL_TEXTURE_2D, texture1);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	stbi_image_free(texture_data);
-
-	// Загрузка текстуры 2
-	texture_data = stbi_load("Textures/texture.jpg", &width, &height, &nr_channels, 0);
-	if (texture_data == nullptr) 
-	{
-		std::cout << "Texture loading error\n";
-		return -1;
-	}
-
-	glGenTextures(1, &texture2);
-	glBindTexture(GL_TEXTURE_2D, texture2);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, texture_data);
-	glGenerateMipmap(GL_TEXTURE_2D);
-	stbi_image_free(texture_data);
+	// Загрузка текстур
+	Texture2D texture1("Textures/texture.jpg"), texture2("Textures/texture.jpg");
 
 	GLfloat R = 0.5, G = 0.5, B = 0.5, T = 0.0;
 	GLfloat rectangle[] = {
@@ -241,10 +202,8 @@ int main()
 	shader.setUniform("texture1", 0);
 	shader.setUniform("texture2", 1);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture1);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	texture1.active(GL_TEXTURE0);
+	texture2.active(GL_TEXTURE1);
 
 	glm::mat4 model = glm::mat4(1.0f);
 	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
