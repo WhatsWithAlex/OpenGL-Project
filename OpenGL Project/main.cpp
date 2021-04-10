@@ -13,7 +13,7 @@
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 800
 
-void framebufferSizeCallback(GLFWwindow* window, GLint width, GLint height) 
+void framebufferSizeCallback(GLFWwindow *window, GLint width, GLint height) 
 {
 	glViewport(0, 0, width, height);
 }
@@ -37,19 +37,19 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 	camera.processMouse(offset_x, offset_y);
 }
 
-void processInputEvents(GLFWwindow* window) 
+void processInputEvents(GLFWwindow *window) 
 {
 	camera.processKeyboard(window);
 }
 
-GLFWwindow* initGLFWWindow(GLuint width, GLuint height) 
+GLFWwindow *initGLFWWindow(GLuint width, GLuint height) 
 {
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // OpenGL
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); // Version 3.3
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(width, height, "OpenGL Program", NULL, NULL);
+	GLFWwindow *window = glfwCreateWindow(width, height, "OpenGL Program", NULL, NULL);
 	if (window == nullptr) 
 	{
 		std::cout << "Error while creating window!\n";

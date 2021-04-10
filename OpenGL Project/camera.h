@@ -5,9 +5,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-glm::vec3 global_up(0.0, 1.0, 0.0);
-glm::vec3 global_right(1.0, 0.0, 0.0);
-glm::vec3 global_forward(0.0, 0.0, 1.0);
+glm::vec3 global_up(0.0f, 1.0f, 0.0f);
+glm::vec3 global_right(1.0f, 0.0f, 0.0f);
+glm::vec3 global_forward(0.0f, 0.0f, 1.0f);
 
 class Camera 
 {
@@ -29,9 +29,8 @@ public:
 	void move(glm::vec3 shift);
 	void rotate(GLfloat angle, glm::vec3 axis);
 	void processKeyboard(GLFWwindow *window);
-	friend void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+	friend void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 	void processMouse(GLfloat offset_x, GLfloat offset_y);
-	void processScroll(GLFWwindow* window);
 	bool isLocked();
 	glm::vec3 getPos();
 	glm::vec3 getDir();
@@ -68,13 +67,13 @@ void Camera::changeLookAt() {
 	rotation[2][2] = -direction.z;
 	look_at = rotation * translation;
 }
-Camera::Camera(glm::vec3 position = glm::vec3(0.0, 0.0, 0.0), glm::vec3 target = glm::vec3(0.0, 0.0, 0.0), bool locked = false, GLfloat speed = 0.05f, GLfloat sensitivity = 0.05f)
+Camera::Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), bool locked = false, GLfloat speed = 0.05f, GLfloat sensitivity = 0.05f)
 	: position(position), target(target), target_locked(locked), speed(speed), sensitivity(sensitivity)
 {
 	if (position != target)
 		direction = -glm::normalize(position - target);
 	else
-		direction = glm::vec3(0.0, 0.0, 1.0);
+		direction = glm::vec3(0.0f, 0.0f, 1.0f);
 	yaw = glm::degrees(glm::asin(glm::dot(direction, global_forward)));
 	pitch = glm::degrees(glm::asin(glm::dot(direction, global_up)));
 	changeLookAt();
@@ -127,7 +126,7 @@ void Camera::rotate(GLfloat angle, glm::vec3 axis)
 {
 	glm::mat4 rotate_matrix(1.0f);
 	rotate_matrix = glm::rotate(rotate_matrix, angle, axis);
-	direction = rotate_matrix * glm::vec4(direction, 1.0);
+	direction = rotate_matrix * glm::vec4(direction, 1.0f);
 	changeLookAt();
 }
 bool Camera::isLocked() { return target_locked; }

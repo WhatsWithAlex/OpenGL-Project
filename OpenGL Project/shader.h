@@ -15,11 +15,11 @@ public:
 	Shader(std::string vertex_shader_path, std::string fragment_shader_path);
 	GLuint getID();
 	void use();
-	void setUniform(const std::string & name, GLint value) const;
-	void setUniform(const std::string & name, GLfloat value) const;
-	void setUniform(const std::string & name, glm::mat3 value) const;
-	void setUniform(const std::string & name, glm::mat4 value) const;
-	void setUniform(const std::string & name, glm::vec3 value) const;
+	void setUniform(const std::string &name, GLint value) const;
+	void setUniform(const std::string &name, GLfloat value) const;
+	void setUniform(const std::string &name, glm::mat3 value) const;
+	void setUniform(const std::string &name, glm::mat4 value) const;
+	void setUniform(const std::string &name, glm::vec3 value) const;
 };
 
 void Shader::checkCompileStatus(GLuint shader, GLint type) 
