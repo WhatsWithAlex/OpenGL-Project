@@ -9,6 +9,7 @@
 #include "shader.h"
 #include "camera.h"
 #include "texture.h"
+#include "model.h"
 
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 800
@@ -64,7 +65,7 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 
 	camera.processMouse(offset_x, offset_y);
 }
-void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
 		camera.changeLock();
@@ -121,7 +122,9 @@ int main()
 	Shader shader("vertex.vsh", "fragment.fsh"), light_shader("vertex_light.vsh", "fragment_light.fsh");
 	
 	// Загрузка текстур
-	Texture2D diffuse_map("Textures/wall/wall_diffuse.jpg"), specular_map("Textures/wall/wall_specular.jpg"), normal_map("Textures/wall/wall_normal.jpg");
+	Texture2D diffuse_map("Models/textures/1_earth_8k.jpg", "diffuse_map");
+	Texture2D specular_map("Models/textures/1_earth_8k.jpg", "specular_map");
+	Texture2D normal_map("Textures/wall/wall_normal.jpg", "normal_map");
 
 	// Создание материала
 	Material material = {
@@ -131,6 +134,7 @@ int main()
 		32.0f
 	};
 	
+	Model earth("Models/source/earth.fbx");
 	// Создание источников света
 	DirectedLight dir_light = {
 		glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f)),
@@ -143,7 +147,7 @@ int main()
 		glm::vec3(0.03f, 0.01f, 0.00f),
 		glm::vec3(0.8f, 0.05f, 0.0f),
 		glm::vec3(1.0f, 0.1f, 0.0f),
-		1.0f, 0.7f, 1.8f
+		1.0f, 1.5f, 0.8f
 	};
 
 	GLfloat T = 0.0f;
@@ -271,24 +275,24 @@ int main()
 
 	shader.use();
 	shader.setUniform("projection", projection);
-	shader.setUniform("material.diffuse_map", 0);
-	shader.setUniform("material.specular_map", 1);
-	shader.setUniform("material.normal_map", 2);
+	//shader.setUniform("material.diffuse_map", 0);
+	//shader.setUniform("material.specular_map", 1);
+	//shader.setUniform("material.normal_map", 2);
 	shader.setUniform("material.shininess", material.shininess);
 	shader.setUniform("dir_light.dir", dir_light.dir);
 	shader.setUniform("dir_light.ambient_intensity", dir_light.ambient_intensity);
 	shader.setUniform("dir_light.diffuse_intensity", dir_light.diffuse_intensity);
 	shader.setUniform("dir_light.specular_intensity", dir_light.specular_intensity);
-	shader.setUniform("point_light.ambient_intensity", point_light.ambient_intensity);
-	shader.setUniform("point_light.diffuse_intensity", point_light.diffuse_intensity);
-	shader.setUniform("point_light.specular_intensity", point_light.specular_intensity);
-	shader.setUniform("point_light.constant", point_light.constant);
-	shader.setUniform("point_light.linear", point_light.linear);
-	shader.setUniform("point_light.quadratic", point_light.quadratic);
+	shader.setUniform("point_light[0].ambient_intensity", point_light.ambient_intensity);
+	shader.setUniform("point_light[0].diffuse_intensity", point_light.diffuse_intensity);
+	shader.setUniform("point_light[0].specular_intensity", point_light.specular_intensity);
+	shader.setUniform("point_light[0].constant", point_light.constant);
+	shader.setUniform("point_light[0].linear", point_light.linear);
+	shader.setUniform("point_light[0].quadratic", point_light.quadratic);
 
 	material.diffuse_map.active(GL_TEXTURE0);
 	material.specular_map.active(GL_TEXTURE1);
-	material.normal_map.active(GL_TEXTURE2);
+	//material.normal_map.active(GL_TEXTURE2);
 
 	light_shader.use();
 	light_shader.setUniform("light_color", point_light.specular_intensity);
@@ -309,10 +313,10 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		point_light.pos = glm::vec3(1.0f, 1.0f * sin(T / 2), 1.0f * cos(T / 2));
-
+		
 		// Объекты
 		shader.use();
-		shader.setUniform("point_light.pos", point_light.pos);
+		shader.setUniform("point_light[0].pos", point_light.pos);
 
 		view = camera.getLookAt();
 		shader.setUniform("view", view);
@@ -322,6 +326,7 @@ int main()
 		shader.setUniform("model", model);
 		normal_matrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
 		shader.setUniform("normal_matrix", normal_matrix);
+		earth.render(shader);
 
 		glBindVertexArray(vertex_array);
 		glDrawArrays(GL_TRIANGLES, 0, 18);

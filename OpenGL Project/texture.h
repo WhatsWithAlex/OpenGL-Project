@@ -8,23 +8,25 @@
 class Texture2D 
 {
 	GLuint id;
-	GLint width, height, nr_channels;
-	GLubyte *data;
-	bool gen_mipmap;
+	std::string type;
 public:
-	Texture2D(std::string path, GLint par1, GLint par2, GLint par3, GLint par4, bool gen_mipmap);
-	void load(std::string path);
+	Texture2D(const std::string &path, const std::string &type, GLint par1, GLint par2, GLint par3, GLint par4, bool gen_mipmap);
+	GLuint getID();
+	std::string getType();
+	void load(std::string path, bool gen_mipmap);
 	void setParameter(GLint parameter, GLint value);
 	void bind();
 	void unbind();
 	void active(GLint slot);
 };
 
-Texture2D::Texture2D(std::string path, GLint par1 = GL_REPEAT, GLint par2 = GL_REPEAT, GLint par3 = GL_LINEAR_MIPMAP_LINEAR, GLint par4 = GL_LINEAR, bool gen_mipmap = true) 
-	: gen_mipmap(gen_mipmap)
+Texture2D::Texture2D(const std::string &path, const std::string &type, 
+	GLint par1 = GL_REPEAT, GLint par2 = GL_REPEAT, GLint par3 = GL_LINEAR_MIPMAP_LINEAR, GLint par4 = GL_LINEAR, bool gen_mipmap = true) 
+	: type(type)
 {
 	stbi_set_flip_vertically_on_load(true);
-	data = stbi_load(path.c_str(), &width, &height, &nr_channels, 0);
+	GLint width, height, nr_channels;
+	GLubyte *data = stbi_load(path.c_str(), &width, &height, &nr_channels, 0);
 	if (data == nullptr)
 	{
 		std::cout << "Texture loading error\n";
@@ -43,9 +45,12 @@ Texture2D::Texture2D(std::string path, GLint par1 = GL_REPEAT, GLint par2 = GL_R
 	stbi_image_free(data);
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
-void Texture2D::load(std::string path)
+GLuint Texture2D::getID() { return id; }
+std::string Texture2D::getType() { return type; }
+void Texture2D::load(std::string path, bool gen_mipmap)
 {
-	data = stbi_load(path.c_str(), &width, &height, &nr_channels, 0);
+	GLint width, height, nr_channels;
+	GLubyte *data = stbi_load(path.c_str(), &width, &height, &nr_channels, 0);
 	if (data == nullptr)
 	{
 		std::cout << "Texture loading error\n";

@@ -9,10 +9,10 @@
 
 class Shader 
 {
-	int shader_id;
+	GLuint shader_id;
 	void checkCompileStatus(GLuint shader, GLint type);
 public:
-	Shader(std::string vertex_shader_path, std::string fragment_shader_path);
+	Shader(const std::string &vertex_shader_path, const std::string &fragment_shader_path);
 	GLuint getID();
 	void use();
 	void setUniform(const std::string &name, GLint value) const;
@@ -34,7 +34,7 @@ void Shader::checkCompileStatus(GLuint shader, GLint type)
 		std::cout << "Error while compiling shader\n" << info_log << std::endl;
 	}
 }
-Shader::Shader(std::string vertex_shader_path, std::string fragment_shader_path) 
+Shader::Shader(const std::string &vertex_shader_path, const std::string &fragment_shader_path) 
 {
 	const char *vertex_shader_src;
 	const char *fragment_shader_src;
