@@ -28,7 +28,7 @@ public:
 	void changeLock();
 	void move(glm::vec3 shift);
 	void rotate(GLfloat angle, glm::vec3 axis);
-	void processKeyboard(GLFWwindow *window);
+	void processKeyboard(GLFWwindow *window, GLfloat frame_time);
 	friend void mouseCallback(GLFWwindow *window, double xpos, double ypos);
 	void processMouse(GLfloat offset_x, GLfloat offset_y);
 	bool isLocked();
@@ -40,7 +40,7 @@ public:
 void Camera::changeLookAt() {
 	if (target_locked && (position != target))
 			direction = -glm::normalize(position - target);
-		
+	
 	if (abs(glm::dot(direction, global_up)) <= 0.99999f) 
 	{
 		right = glm::normalize(glm::cross(direction, global_up));
@@ -67,7 +67,7 @@ void Camera::changeLookAt() {
 	rotation[2][2] = -direction.z;
 	look_at = rotation * translation;
 }
-Camera::Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), bool locked = false, GLfloat speed = 0.05f, GLfloat sensitivity = 0.05f)
+Camera::Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), bool locked = false, GLfloat speed = 3.0f, GLfloat sensitivity = 0.05f)
 	: position(position), target(target), target_locked(locked), speed(speed), sensitivity(sensitivity)
 {
 	if (position != target)
@@ -83,12 +83,13 @@ void Camera::setDir(glm::vec3 new_direction) { direction = -glm::normalize(new_d
 void Camera::setTarget(glm::vec3 new_target) { target = new_target; direction = -glm::normalize(position - target); }
 void Camera::lockOnTarget(glm::vec3 new_target) { target = new_target; target_locked = true; }
 void Camera::lock() { target_locked = true; }
-void Camera::unlock() { target_locked = false; direction = glm::normalize(position - target); }
+void Camera::unlock() { target_locked = false; direction = -glm::normalize(position - target); changeLookAt(); }
 void Camera::changeLock() 
 {
 	target_locked = !target_locked;
 	if (!target_locked)
-		direction = glm::normalize(position - target);
+		direction = -glm::normalize(position - target);
+	changeLookAt();
 }
 void Camera::processMouse(GLfloat offset_x, GLfloat offset_y) {
 	yaw += sensitivity * offset_x;
@@ -104,20 +105,20 @@ void Camera::processMouse(GLfloat offset_x, GLfloat offset_y) {
 	direction = glm::normalize(dir);
 	changeLookAt();
 }
-void Camera::processKeyboard(GLFWwindow *window) 
+void Camera::processKeyboard(GLFWwindow *window, GLfloat frame_time) 
 {
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		position += speed * direction;
+		position += speed * frame_time * direction;
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		position -= speed * direction;
+		position -= speed * frame_time * direction;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		position -= right * speed;
+		position -= speed * frame_time * right;
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		position += right * speed;
+		position += speed * frame_time * right;
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
-		position += up * speed;
+		position += speed * frame_time * up;
 	if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
-		position -= up * speed;
+		position -= speed * frame_time * up;
 
 	changeLookAt();
 }
