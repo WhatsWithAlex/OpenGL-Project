@@ -27,6 +27,7 @@ class Mesh
     GLuint vertex_array, vertex_buffer, element_buffer;
 public:
     Mesh(vector<Vertex> vertices, vector<GLuint> indexes, vector<Texture2D> textures);
+    ~Mesh();
     void render(Shader &shader);
 };
 
@@ -60,6 +61,11 @@ Mesh::Mesh(vector<Vertex> vertices, vector<GLuint> indexes, vector<Texture2D> te
     glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(12 * sizeof(GLfloat)));
 
     glBindVertexArray(0);
+}
+Mesh::~Mesh()
+{
+    //glDeleteVertexArrays(1, &vertex_array);
+    //glDeleteBuffers(1, &vertex_buffer);
 }
 void Mesh::render(Shader &shader)
 {

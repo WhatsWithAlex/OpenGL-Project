@@ -14,6 +14,9 @@
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 800
 
+#define SHDW_MAP_WIDTH 2048
+#define SHDW_MAP_HEIGHT 2048
+
 GLfloat current_time = 0.0f, last_time = 0.0f, frame_time, time_scale = 1.0f;
 
 struct Material 
@@ -47,7 +50,7 @@ void framebufferSizeCallback(GLFWwindow *window, GLint width, GLint height)
 	glViewport(0, 0, width, height);
 }
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), false);
+Camera camera(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), false);
 GLfloat last_x, last_y;
 bool first = true;
 void mouseCallback(GLFWwindow* window, double xpos, double ypos)
@@ -117,27 +120,37 @@ int main()
 		return -1;
 	}
 
+	glfwWindowHint(GLFW_SAMPLES, 8);
+	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Компиляция шейдеров
-	Shader shader("vertex.vsh", "fragment.fsh"), light_shader("vertex_light.vsh", "fragment_light.fsh");
-	
-	// Загрузка текстур
-	Texture2D diffuse_map("Models/Earth_Diffuse_6K.jpg", "diffuse_map");
-	Texture2D specular_map("Models/Earth_Glossiness_6K.jpg", "specular_map");
-	Texture2D normal_map("Models/Earth_NormalNRM_6K.jpg", "normal_map");
 
-	// Создание материала
-	Material material = {
-		diffuse_map, 
-		specular_map,
-		normal_map,
-		64.0f
-	};
+	GLuint depth_map_buffer;
+	glGenFramebuffers(1, &depth_map_buffer);
+
+	GLuint depth_map;
+	glGenTextures(1, &depth_map);
+	glBindTexture(GL_TEXTURE_2D, depth_map);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHDW_MAP_WIDTH, SHDW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	GLfloat border_color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, depth_map_buffer);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	// Компиляция шейдеров
+	Shader shader("vertex.vsh", "fragment.fsh"), light_shader("vertex_light.vsh", "fragment_light.fsh"), depth_shader("vertex_depth.vsh", "fragment_depth.fsh");
 	
-	Model myearth("Models/myearth.obj");
+	Model myearth("Models/myearth.obj"), box("Models/cube.obj");
 
 	// Создание источников света
 	DirectedLight dir_light = {
@@ -197,110 +210,34 @@ int main()
 		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,  0.0f,  1.0f,  0.0f,
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f,  1.0f,  0.0f,
 	};
-	GLfloat pyramid[] = {
-		 0.0f,  0.3f,  0.0f,  0.5f, 1.0f,  0.0f,  0.53f,  -0.848f,
-		-0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f,  0.53f,  -0.848f,
-		 0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f,  0.53f,  -0.848f,
 
-		 0.0f,  0.3f,  0.0f,  0.5f, 1.0f,  0.848f, 0.53f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.848f, 0.53f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  0.848f, 0.53f,  0.0f,
-
-		 0.0f,  0.3f,  0.0f,  0.5f, 1.0f,  0.0f,  0.53f,  0.848f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,  0.0f,  0.53f,  0.848f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  0.0f,  0.53f,  0.848f,
-
-		 0.0f,  0.3f,  0.0f,  0.5f, 1.0f, -0.848f,  0.53f,  0.0f,
-		-0.5f, -0.5f,  0.5f,  1.0f, 0.0f, -0.848f,  0.53f,  0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, -0.848f,  0.53f,  0.0f,
-
-		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f, -1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, 1.0f,  0.0f, -1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,  0.0f, -1.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  1.0f, 1.0f,  0.0f, -1.0f, 0.0f,
-	};
-
-	glm::vec3 object_positions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-		glm::vec3(2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3(2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.7f,  3.0f, -7.5f),
-		glm::vec3(1.3f, -2.0f, -2.5f),
-		glm::vec3(1.5f,  2.0f, -2.5f),
-		glm::vec3(1.5f,  0.2f, -1.5f),
-		glm::vec3(-1.3f,  1.0f, -1.5f)
-	};
-	GLuint vertex_array, light_vertex_array, vertex_buffer, light_vertex_buffer, element_buffer;
-
-	// Создание объектов буфера и массива вершин и буфера элементов
-	glGenVertexArrays(1, &vertex_array);
-	glGenVertexArrays(1, &light_vertex_array);
-	glGenBuffers(1, &vertex_buffer);
-	glGenBuffers(1, &light_vertex_buffer);
-	glGenBuffers(1, &element_buffer);
-
-	glBindVertexArray(vertex_array);
-	glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(pyramid), pyramid, GL_STATIC_DRAW);
-
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indexes), indexes, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_TRUE, 8 * sizeof(GLfloat), (void*)(5 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(2);
-
-	//glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)(6 * sizeof(GLfloat)));
-	//glEnableVertexAttribArray(2);
-
-	glBindVertexArray(light_vertex_array);
-	glBindBuffer(GL_ARRAY_BUFFER, light_vertex_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(cube), cube, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
-	glm::mat4 model = glm::mat4(1.0f);
-	//model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	glm::mat4 projection, view;
+	glm::mat4 projection, light_projection, view, light_view, light_space, model, box_model;
 	projection = glm::perspective(glm::radians(50.0f), (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
-	glm::mat3 normal_matrix;
+	light_projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f);
+	light_view = glm::lookAt(-dir_light.dir * glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f), global_up);
+	light_space = light_projection * light_view;
+
+	depth_shader.use();
+	depth_shader.setUniform("light_space", light_space);
 
 	shader.use();
 	shader.setUniform("projection", projection);
-	shader.setUniform("material.diffuse_map[0]", 0);
-	shader.setUniform("material.specular_map[0]", 1);
-	shader.setUniform("material.normal_map[0]", 2);
-	shader.setUniform("material.shininess", material.shininess);
+	shader.setUniform("light_space", light_space);
+	shader.setUniform("material.shininess", 64.0f);
 	shader.setUniform("dir_light.dir", dir_light.dir);
 	shader.setUniform("dir_light.ambient_intensity", dir_light.ambient_intensity);
 	shader.setUniform("dir_light.diffuse_intensity", dir_light.diffuse_intensity);
 	shader.setUniform("dir_light.specular_intensity", dir_light.specular_intensity);
-	shader.setUniform("point_light[0].ambient_intensity", point_light.ambient_intensity);
+	/*shader.setUniform("point_light[0].ambient_intensity", point_light.ambient_intensity);
 	shader.setUniform("point_light[0].diffuse_intensity", point_light.diffuse_intensity);
 	shader.setUniform("point_light[0].specular_intensity", point_light.specular_intensity);
 	shader.setUniform("point_light[0].constant", point_light.constant);
 	shader.setUniform("point_light[0].linear", point_light.linear);
-	shader.setUniform("point_light[0].quadratic", point_light.quadratic);
-
-	//material.diffuse_map.active(GL_TEXTURE0);
-	//material.specular_map.active(GL_TEXTURE1);
-	//material.normal_map.active(GL_TEXTURE2);
+	shader.setUniform("point_light[0].quadratic", point_light.quadratic);*/
 
 	light_shader.use();
-	light_shader.setUniform("light_color", point_light.specular_intensity);
 	light_shader.setUniform("projection", projection);
-
+	light_shader.setUniform("light_color", point_light.specular_intensity);
 
 	// Основной цикл рендеринга
 	while (!glfwWindowShouldClose(window))
@@ -314,42 +251,51 @@ int main()
 		glClearColor(0.0f, 0.01f, 0.03f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		point_light.pos = glm::vec3(2.5f, 1.0f * sin(time_scale * current_time / 2), 1.0f * cos(time_scale * current_time / 2));
-		// Объекты
-		shader.use();
-		shader.setUniform("point_light[0].pos", point_light.pos);
+		//point_light.pos = glm::vec3(2.5f, 1.0f * sin(time_scale * current_time / 2), 1.0f * cos(time_scale * current_time / 2));
 
 		view = camera.getLookAt();
-		shader.setUniform("view", view);
 		
 		model = glm::mat4(1.0f);
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
 		model = glm::rotate(model, time_scale * current_time / 2, glm::vec3(0.0f, 1.0f, 0.0f));
+		box_model = glm::mat4(1.0f);
+		box_model = glm::translate(box_model, glm::vec3(0.0f, -3.0f, 0.0f));
+		box_model = glm::scale(box_model, glm::vec3(20.0f, 1.0f, 20.0f));
+
+		// Рендеринг в карту глубины
+		glCullFace(GL_FRONT);
+		glViewport(0, 0, SHDW_MAP_WIDTH, SHDW_MAP_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depth_map_buffer);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		depth_shader.use();
+		depth_shader.setUniform("model", model);
+		depth_shader.setUniform("view", view);
+
+		myearth.render(depth_shader);
+		depth_shader.setUniform("model", box_model);
+		box.render(depth_shader);
+		glCullFace(GL_BACK);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+		// Рендеринг в стандартный буфер
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		glActiveTexture(GL_TEXTURE15);
+		glBindTexture(GL_TEXTURE_2D, depth_map);
+		shader.use();
+		shader.setUniform("view", view);
 		shader.setUniform("model", model);
-		normal_matrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
-		shader.setUniform("normal_matrix", normal_matrix);
+		shader.setUniform("shadow_map", 15);
 
-		/*glBindVertexArray(vertex_array);
-		glDrawArrays(GL_TRIANGLES, 0, 18);*/
 		myearth.render(shader);
-
-		light_shader.use();
-		light_shader.setUniform("view", view);
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, point_light.pos);
-		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
-		light_shader.setUniform("model", model);
-
-		glBindVertexArray(light_vertex_array);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		shader.setUniform("model", box_model);
+		box.render(shader);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-
-	glDeleteVertexArrays(1, &vertex_array);
-	glDeleteBuffers(1, &vertex_buffer);
 
 	glfwTerminate();
 	return 0;

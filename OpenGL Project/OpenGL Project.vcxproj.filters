@@ -58,5 +58,11 @@
     <FxCompile Include="fragment_light.fsh">
       <Filter>Исходные файлы</Filter>
     </FxCompile>
+    <FxCompile Include="fragment_depth.fsh">
+      <Filter>Исходные файлы</Filter>
+    </FxCompile>
+    <FxCompile Include="vertex_depth.vsh">
+      <Filter>Исходные файлы</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
