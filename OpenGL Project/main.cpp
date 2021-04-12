@@ -117,13 +117,15 @@ int main()
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Компиляция шейдеров
 	Shader shader("vertex.vsh", "fragment.fsh"), light_shader("vertex_light.vsh", "fragment_light.fsh");
 	
 	// Загрузка текстур
-	Texture2D diffuse_map("Models/textures/1_earth_8k.jpg", "diffuse_map");
-	Texture2D specular_map("Models/textures/1_earth_8k.jpg", "specular_map");
+	Texture2D diffuse_map("Textures/wall/wall_diffuse.jpg", "diffuse_map");
+	Texture2D specular_map("Textures/wall/wall_specular.jpg", "specular_map");
 	Texture2D normal_map("Textures/wall/wall_normal.jpg", "normal_map");
 
 	// Создание материала
@@ -134,7 +136,8 @@ int main()
 		32.0f
 	};
 	
-	Model earth("Models/source/earth.fbx");
+	Model mycube("Models/cube.obj");
+
 	// Создание источников света
 	DirectedLight dir_light = {
 		glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f)),
@@ -147,7 +150,7 @@ int main()
 		glm::vec3(0.03f, 0.01f, 0.00f),
 		glm::vec3(0.8f, 0.05f, 0.0f),
 		glm::vec3(1.0f, 0.1f, 0.0f),
-		1.0f, 1.5f, 0.8f
+		1.0f, 0.14f, 0.07f
 	};
 
 	GLfloat T = 0.0f;
@@ -268,16 +271,16 @@ int main()
 	glBindVertexArray(0);
 
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	//model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 	glm::mat4 projection, view;
 	projection = glm::perspective(glm::radians(50.0f), (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
 	glm::mat3 normal_matrix;
 
 	shader.use();
 	shader.setUniform("projection", projection);
-	//shader.setUniform("material.diffuse_map", 0);
-	//shader.setUniform("material.specular_map", 1);
-	//shader.setUniform("material.normal_map", 2);
+	//shader.setUniform("material.diffuse_map[0]", 0);
+	shader.setUniform("material.specular_map[0]", 1);
+	shader.setUniform("material.normal_map[0]", 2);
 	shader.setUniform("material.shininess", material.shininess);
 	shader.setUniform("dir_light.dir", dir_light.dir);
 	shader.setUniform("dir_light.ambient_intensity", dir_light.ambient_intensity);
@@ -290,9 +293,9 @@ int main()
 	shader.setUniform("point_light[0].linear", point_light.linear);
 	shader.setUniform("point_light[0].quadratic", point_light.quadratic);
 
-	material.diffuse_map.active(GL_TEXTURE0);
+	//material.diffuse_map.active(GL_TEXTURE0);
 	material.specular_map.active(GL_TEXTURE1);
-	//material.normal_map.active(GL_TEXTURE2);
+	material.normal_map.active(GL_TEXTURE2);
 
 	light_shader.use();
 	light_shader.setUniform("light_color", point_light.specular_intensity);
@@ -312,8 +315,7 @@ int main()
 		glClearColor(0.0f, 0.01f, 0.03f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		point_light.pos = glm::vec3(1.0f, 1.0f * sin(T / 2), 1.0f * cos(T / 2));
-		
+		point_light.pos = glm::vec3(1.5f, 1.0f * sin(T / 2), 1.0f * cos(T / 2));
 		// Объекты
 		shader.use();
 		shader.setUniform("point_light[0].pos", point_light.pos);
@@ -326,12 +328,11 @@ int main()
 		shader.setUniform("model", model);
 		normal_matrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
 		shader.setUniform("normal_matrix", normal_matrix);
-		earth.render(shader);
 
-		glBindVertexArray(vertex_array);
-		glDrawArrays(GL_TRIANGLES, 0, 18);
+		/*glBindVertexArray(vertex_array);
+		glDrawArrays(GL_TRIANGLES, 0, 18);*/
+		mycube.render(shader);
 
-		// Освещение
 		light_shader.use();
 		light_shader.setUniform("view", camera.getLookAt());
 		model = glm::mat4(1.0f);

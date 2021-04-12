@@ -14,6 +14,8 @@ struct Vertex
 {
     glm::vec3 position;
     glm::vec3 normal;
+    glm::vec3 tangent;
+    glm::vec3 bitangent;
     glm::vec2 tex_coords;
 };
 
@@ -49,7 +51,13 @@ Mesh::Mesh(vector<Vertex> vertices, vector<GLuint> indexes, vector<Texture2D> te
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(GLfloat)));
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(GLfloat)));
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(GLfloat)));
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(9 * sizeof(GLfloat)));
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(12 * sizeof(GLfloat)));
 
     glBindVertexArray(0);
 }
@@ -64,10 +72,8 @@ void Mesh::render(Shader &shader)
             shader.setUniform(("material." + type + "[" + to_string(dif_count++) + "]").c_str(), i);
         else if (type == "specular_map")
             shader.setUniform(("material." + type + "[" + to_string(spec_count++) + "]").c_str(), i);
-        else if (type == "specular_map")
+        else if (type == "normal_map")
             shader.setUniform(("material." + type + "[" + to_string(norm_count++) + "]").c_str(), i);
-        else
-            cout << "Wrong texture type!\n";
 
         textures[i].active(GL_TEXTURE0 + i);
     }
@@ -95,14 +101,14 @@ public:
 Model::Model(const string &path) 
 {
     Assimp::Importer importer;
-    const aiScene *scene = importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
+    const aiScene *scene = importer.ReadFile(path.c_str(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals | aiProcess_CalcTangentSpace);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
         cout << "Error while loading model: " << importer.GetErrorString() << endl;
         throw -1;
     }
-   // directory = path.substr(0, path.find_last_of('/'));
+    directory = path.substr(0, path.find_last_of('/'));
 
     loadNode(scene->mRootNode, scene);
 }
@@ -138,6 +144,16 @@ Mesh Model::loadMesh(aiMesh* mesh, const aiScene* scene)
         vector.z = mesh->mNormals[i].z;
         vertex.normal = vector;
 
+        vector.x = mesh->mTangents[i].x;
+        vector.y = mesh->mTangents[i].y;
+        vector.z = mesh->mTangents[i].z;
+        vertex.tangent = vector;
+
+        vector.x = mesh->mBitangents[i].x;
+        vector.y = mesh->mBitangents[i].y;
+        vector.z = mesh->mBitangents[i].z;
+        vertex.bitangent = vector;
+
         if (mesh->mTextureCoords[0])
         {
             glm::vec2 vec;
@@ -160,12 +176,12 @@ Mesh Model::loadMesh(aiMesh* mesh, const aiScene* scene)
 
     if (mesh->mMaterialIndex >= 0)
     {
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        aiMaterial *material = scene->mMaterials[mesh->mMaterialIndex];
         vector <Texture2D> diffuse_maps = loadMaterialTextures(material, aiTextureType_DIFFUSE, "diffuse_map");
         textures.insert(textures.end(), diffuse_maps.begin(), diffuse_maps.end());
         vector <Texture2D> specular_maps = loadMaterialTextures(material, aiTextureType_SPECULAR, "specular_map");
         textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
-        vector <Texture2D> normal_maps = loadMaterialTextures(material, aiTextureType_NORMALS, "normal_map");
+        vector <Texture2D> normal_maps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal_map");
         textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
     }
     
@@ -173,13 +189,12 @@ Mesh Model::loadMesh(aiMesh* mesh, const aiScene* scene)
 }
 vector <Texture2D> Model::loadMaterialTextures(aiMaterial *material, aiTextureType type, string type_name)
 {
-    
     vector <Texture2D> textures;
     aiString str;
     for (int i = 0; i < material->GetTextureCount(type); ++i)
     {
         material->GetTexture(type, i, &str);
-        Texture2D texture(str.C_Str(), type_name);
+        Texture2D texture(str.C_Str(), type_name, directory);
         textures.push_back(texture);
     }
     return textures;

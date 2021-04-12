@@ -32,12 +32,13 @@ struct PointLight
 out vec4 frag_color;
 
 in vec2 vert_tex_coords;
-in vec3 normal;
 in vec3 frag_pos;
+in vec3 normal;
+in mat3 TBN;
 
 uniform Material material;
 uniform DirectedLight dir_light;
-uniform PointLight point_light[5];
+uniform PointLight point_light[LGT_NUM];
 uniform mat4 model;
 uniform mat4 view;
 
@@ -81,7 +82,10 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 frag_pos)
 
 void main() 
 {
-	vec3 frag_norm = normal;
+	vec3 frag_norm = vec3(texture(material.normal_map[0], vert_tex_coords));
+	frag_norm = frag_norm * 2.0 - 1.0;
+	frag_norm = normalize(TBN * frag_norm);
+
 	vec3 result = calculateDirLight(dir_light, frag_norm, frag_pos);
 	for (int i = 0; i < 1; ++i)
 		result += calculatePointLight(point_light[i], frag_norm, frag_pos);
