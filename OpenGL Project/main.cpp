@@ -14,7 +14,7 @@
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 800
 
-GLfloat current_time = 0.0f, last_time = 0.0f, frame_time;
+GLfloat current_time = 0.0f, last_time = 0.0f, frame_time, time_scale = 1.0f;
 
 struct Material 
 {
@@ -74,7 +74,8 @@ void processInputEvents(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
-	camera.processKeyboard(window, frame_time);
+	
+	camera.processKeyboard(window, time_scale * frame_time);
 }
 
 GLFWwindow *initGLFWWindow(GLuint width, GLuint height) 
@@ -124,26 +125,26 @@ int main()
 	Shader shader("vertex.vsh", "fragment.fsh"), light_shader("vertex_light.vsh", "fragment_light.fsh");
 	
 	// Загрузка текстур
-	Texture2D diffuse_map("Textures/wall/wall_diffuse.jpg", "diffuse_map");
-	Texture2D specular_map("Textures/wall/wall_specular.jpg", "specular_map");
-	Texture2D normal_map("Textures/wall/wall_normal.jpg", "normal_map");
+	Texture2D diffuse_map("Models/Earth_Diffuse_6K.jpg", "diffuse_map");
+	Texture2D specular_map("Models/Earth_Glossiness_6K.jpg", "specular_map");
+	Texture2D normal_map("Models/Earth_NormalNRM_6K.jpg", "normal_map");
 
 	// Создание материала
 	Material material = {
 		diffuse_map, 
 		specular_map,
 		normal_map,
-		32.0f
+		64.0f
 	};
 	
-	Model mycube("Models/cube.obj");
+	Model myearth("Models/myearth.obj");
 
 	// Создание источников света
 	DirectedLight dir_light = {
 		glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f)),
-		glm::vec3(0.02f, 0.02f, 0.03f),
-		glm::vec3(0.8f, 0.7f, 0.8f),
-		glm::vec3(0.9f, 0.9f, 1.0f)
+		glm::vec3(0.03f, 0.02f, 0.01f),
+		glm::vec3(0.7f, 0.6f, 0.6f),
+		glm::vec3(1.0f, 0.8f, 0.5f)
 	};
 	PointLight point_light = {
 		glm::vec3(1.0f, 1.0f, -1.0f),
@@ -153,7 +154,6 @@ int main()
 		1.0f, 0.14f, 0.07f
 	};
 
-	GLfloat T = 0.0f;
 	GLfloat cube[] = {
 		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,  0.0f,  0.0f, -1.0f,
 		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,  0.0f,  0.0f, -1.0f,
@@ -278,7 +278,7 @@ int main()
 
 	shader.use();
 	shader.setUniform("projection", projection);
-	//shader.setUniform("material.diffuse_map[0]", 0);
+	shader.setUniform("material.diffuse_map[0]", 0);
 	shader.setUniform("material.specular_map[0]", 1);
 	shader.setUniform("material.normal_map[0]", 2);
 	shader.setUniform("material.shininess", material.shininess);
@@ -294,8 +294,8 @@ int main()
 	shader.setUniform("point_light[0].quadratic", point_light.quadratic);
 
 	//material.diffuse_map.active(GL_TEXTURE0);
-	material.specular_map.active(GL_TEXTURE1);
-	material.normal_map.active(GL_TEXTURE2);
+	//material.specular_map.active(GL_TEXTURE1);
+	//material.normal_map.active(GL_TEXTURE2);
 
 	light_shader.use();
 	light_shader.setUniform("light_color", point_light.specular_intensity);
@@ -311,11 +311,10 @@ int main()
 		
 		processInputEvents(window);
 
-		T += 0.05f;
 		glClearColor(0.0f, 0.01f, 0.03f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		point_light.pos = glm::vec3(1.5f, 1.0f * sin(T / 2), 1.0f * cos(T / 2));
+		point_light.pos = glm::vec3(2.5f, 1.0f * sin(time_scale * current_time / 2), 1.0f * cos(time_scale * current_time / 2));
 		// Объекты
 		shader.use();
 		shader.setUniform("point_light[0].pos", point_light.pos);
@@ -324,20 +323,22 @@ int main()
 		shader.setUniform("view", view);
 		
 		model = glm::mat4(1.0f);
-		model = glm::rotate(model, T / 2, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
+		model = glm::rotate(model, time_scale * current_time / 2, glm::vec3(0.0f, 1.0f, 0.0f));
 		shader.setUniform("model", model);
 		normal_matrix = glm::transpose(glm::inverse(glm::mat3(view * model)));
 		shader.setUniform("normal_matrix", normal_matrix);
 
 		/*glBindVertexArray(vertex_array);
 		glDrawArrays(GL_TRIANGLES, 0, 18);*/
-		mycube.render(shader);
+		myearth.render(shader);
 
 		light_shader.use();
-		light_shader.setUniform("view", camera.getLookAt());
+		light_shader.setUniform("view", view);
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, point_light.pos);
-		model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
+		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
 		light_shader.setUniform("model", model);
 
 		glBindVertexArray(light_vertex_array);

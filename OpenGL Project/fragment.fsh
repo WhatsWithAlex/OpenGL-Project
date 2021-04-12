@@ -52,7 +52,7 @@ vec3 calculateDirLight(DirectedLight light, vec3 normal, vec3 frag_pos)
 	vec3 diffuse_light = diffuse * light.diffuse_intensity * vec3(texture(material.diffuse_map[0], vert_tex_coords));
 
 	vec3 view_dir = -normalize(frag_pos);
-	vec3 half_dir = normalize(light_dir + view_dir);
+	vec3 half_dir = normalize(-light_dir + view_dir);
 	float specular = pow(max(dot(half_dir, normal), 0.0), material.shininess);
 	vec3 specular_light = specular * light.specular_intensity * vec3(texture(material.specular_map[0], vert_tex_coords));
 

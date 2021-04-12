@@ -24,7 +24,6 @@ Texture2D::Texture2D(const std::string &filename, const std::string &type, const
 	GLint par1 = GL_REPEAT, GLint par2 = GL_REPEAT, GLint par3 = GL_LINEAR_MIPMAP_LINEAR, GLint par4 = GL_LINEAR, bool gen_mipmap = true) 
 	: type(type)
 {
-	
 	stbi_set_flip_vertically_on_load(true);
 	std::string path = directory + "/" + filename ;
 	GLint width, height, nr_channels;
