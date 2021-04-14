@@ -30,7 +30,7 @@
 * Управление камерой
 * Загрузка 3д моделей при помощи библиотеки Assimp
 
-# Демо:
+# Демо
 ![demo1](./Demo/demo1.gif)
 ![demo2](./Demo/demo2.gif)
 ![demo3](./Demo/demo3.gif)
