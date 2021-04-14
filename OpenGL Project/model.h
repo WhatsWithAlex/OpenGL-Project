@@ -76,14 +76,18 @@ void Mesh::render(Shader &shader)
             shader.setUniform(("material." + type + "[" + to_string(norm_count++) + "]").c_str(), i);
         else if (type == "emission_map")
             shader.setUniform(("material." + type + "[" + to_string(emi_count++) + "]").c_str(), i);
-        cout << type << " " << emi_count << endl;
         textures[i].active(GL_TEXTURE0 + i);
     }
-    glActiveTexture(GL_TEXTURE0);
 
     glBindVertexArray(vertex_array);
     glDrawElements(GL_TRIANGLES, indexes.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    for (int i = 0; i < textures.size(); ++i)
+    {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 }
 
 
