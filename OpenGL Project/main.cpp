@@ -62,10 +62,10 @@ void mouseCallback(GLFWwindow* window, double xpos, double ypos)
 		last_y = (GLfloat)ypos;
 		first = false;
 	}
-	GLfloat offset_x = xpos - last_x;
-	GLfloat offset_y = ypos - last_y;
-	last_x = xpos;
-	last_y = ypos;
+	GLfloat offset_x = (GLfloat)xpos - last_x;
+	GLfloat offset_y = (GLfloat)ypos - last_y;
+	last_x = (GLfloat)xpos;
+	last_y = (GLfloat)ypos;
 
 	camera.processMouse(offset_x, offset_y);
 }
@@ -244,7 +244,7 @@ int main()
 	// Основной цикл рендеринга
 	while (!glfwWindowShouldClose(window))
 	{
-		current_time = glfwGetTime();
+		current_time = (GLfloat)glfwGetTime();
 		frame_time = current_time - last_time;
 		last_time = current_time;
 		
