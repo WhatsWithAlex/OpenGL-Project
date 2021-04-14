@@ -1,6 +1,6 @@
 #version 330 core
 
-#define TEX_NUM 5
+#define TEX_NUM 3
 #define LGT_NUM 5
 
 struct Material 
@@ -8,6 +8,7 @@ struct Material
     sampler2D diffuse_map[TEX_NUM];
     sampler2D specular_map[TEX_NUM];
 	sampler2D normal_map[TEX_NUM];
+	sampler2D emission_map[TEX_NUM];
     float shininess;
 }; 
 struct DirectedLight 
@@ -61,6 +62,8 @@ vec3 calculateDirLight(DirectedLight light, vec3 normal, vec3 frag_pos)
 
 	vec3 ambient_light = light.ambient_intensity * vec3(texture(material.diffuse_map[0], vert_tex_coords));
 
+	vec3 emission_light = vec3(texture(material.emission_map[0], vert_tex_coords));
+
 	float diffuse = max(dot(-light_dir, normal), 0.0);
 	vec3 diffuse_light = diffuse * light.diffuse_intensity * vec3(texture(material.diffuse_map[0], vert_tex_coords));
 
@@ -70,7 +73,7 @@ vec3 calculateDirLight(DirectedLight light, vec3 normal, vec3 frag_pos)
 	vec3 specular_light = specular * light.specular_intensity * vec3(texture(material.specular_map[0], vert_tex_coords));
 
 	float shadow = calculateShadow(frag_light_pos, normal, -light_dir);
-	return ambient_light + (1.0 - shadow) * (diffuse_light + specular_light);
+	return ambient_light + emission_light + (1.0 - shadow) * (diffuse_light + specular_light);
 }
 
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 frag_pos) 
@@ -82,6 +85,8 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 frag_pos)
 
 	vec3 ambient_light = attenuation * light.ambient_intensity * vec3(texture(material.diffuse_map[0], vert_tex_coords));
 
+	vec3 emission_light = vec3(texture(material.emission_map[0], vert_tex_coords));
+
 	vec3 light_dir = normalize(light_pos - frag_pos);
 	float diffuse = max(dot(light_dir, normal), 0.0);
 	vec3 diffuse_light = attenuation * diffuse * light.diffuse_intensity * vec3(texture(material.diffuse_map[0], vert_tex_coords));
@@ -91,7 +96,8 @@ vec3 calculatePointLight(PointLight light, vec3 normal, vec3 frag_pos)
 	float specular = pow(max(dot(half_dir, normal), 0.0), material.shininess);
 	vec3 specular_light = attenuation * specular * light.specular_intensity * vec3(texture(material.specular_map[0], vert_tex_coords));
 
-	return ambient_light + diffuse_light + specular_light;
+	float shadow = calculateShadow(frag_light_pos, normal, light_dir);
+	return ambient_light + emission_light + (1.0 - shadow) * diffuse_light + specular_light;
 }
 
 void main() 

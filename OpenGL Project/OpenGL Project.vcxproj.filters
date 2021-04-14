@@ -64,5 +64,11 @@
     <FxCompile Include="vertex_depth.vsh">
       <Filter>Исходные файлы</Filter>
     </FxCompile>
+    <FxCompile Include="vertex_sky.vsh">
+      <Filter>Исходные файлы</Filter>
+    </FxCompile>
+    <FxCompile Include="fragment_sky.fsh">
+      <Filter>Исходные файлы</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

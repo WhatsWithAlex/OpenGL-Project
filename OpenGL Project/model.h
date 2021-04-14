@@ -27,7 +27,6 @@ class Mesh
     GLuint vertex_array, vertex_buffer, element_buffer;
 public:
     Mesh(vector<Vertex> vertices, vector<GLuint> indexes, vector<Texture2D> textures);
-    ~Mesh();
     void render(Shader &shader);
 };
 
@@ -62,15 +61,10 @@ Mesh::Mesh(vector<Vertex> vertices, vector<GLuint> indexes, vector<Texture2D> te
 
     glBindVertexArray(0);
 }
-Mesh::~Mesh()
-{
-    //glDeleteVertexArrays(1, &vertex_array);
-    //glDeleteBuffers(1, &vertex_buffer);
-}
 void Mesh::render(Shader &shader)
 {
     string type;
-    int dif_count = 0, spec_count = 0, norm_count = 0;
+    int dif_count = 0, spec_count = 0, norm_count = 0, emi_count = 0;
     for (int i = 0; i < textures.size(); ++i)
     {
         type = textures[i].getType();
@@ -80,7 +74,9 @@ void Mesh::render(Shader &shader)
             shader.setUniform(("material." + type + "[" + to_string(spec_count++) + "]").c_str(), i);
         else if (type == "normal_map")
             shader.setUniform(("material." + type + "[" + to_string(norm_count++) + "]").c_str(), i);
-
+        else if (type == "emission_map")
+            shader.setUniform(("material." + type + "[" + to_string(emi_count++) + "]").c_str(), i);
+        cout << type << " " << emi_count << endl;
         textures[i].active(GL_TEXTURE0 + i);
     }
     glActiveTexture(GL_TEXTURE0);
@@ -189,6 +185,8 @@ Mesh Model::loadMesh(aiMesh* mesh, const aiScene* scene)
         textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
         vector <Texture2D> normal_maps = loadMaterialTextures(material, aiTextureType_HEIGHT, "normal_map");
         textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
+        vector <Texture2D> emission_maps = loadMaterialTextures(material, aiTextureType_EMISSIVE, "emission_map");
+        textures.insert(textures.end(), emission_maps.begin(), emission_maps.end());
     }
     
     return Mesh(vertices, indexes, textures);

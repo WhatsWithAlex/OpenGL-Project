@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -81,6 +82,32 @@ void processInputEvents(GLFWwindow *window)
 	camera.processKeyboard(window, time_scale * frame_time);
 }
 
+GLuint loadSkyBox(std::vector <string> textures) 
+{
+	GLuint id;
+	GLubyte *data;
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+
+	GLint width, height, nr_channels;
+	for (int i = 0; i < textures.size(); ++i)
+	{
+		data = stbi_load(textures[i].c_str(), &width, &height, &nr_channels, 0);
+		if (data)
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		else
+			std::cout << "Error while loading skybox!\n";
+		stbi_image_free(data);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return id;
+}
+
 GLFWwindow *initGLFWWindow(GLuint width, GLuint height) 
 {
 	glfwInit();
@@ -120,13 +147,14 @@ int main()
 		return -1;
 	}
 
+	// Глобальные настройки
 	glfwWindowHint(GLFW_SAMPLES, 8);
 	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
+	// Буффер и карта глубины
 	GLuint depth_map_buffer;
 	glGenFramebuffers(1, &depth_map_buffer);
 
@@ -149,15 +177,25 @@ int main()
 
 	// Компиляция шейдеров
 	Shader shader("vertex.vsh", "fragment.fsh"), light_shader("vertex_light.vsh", "fragment_light.fsh"), depth_shader("vertex_depth.vsh", "fragment_depth.fsh");
-	
-	Model myearth("Models/myearth.obj"), box("Models/cube.obj");
+	Shader sky_shader("vertex_sky.vsh", "fragment_sky.fsh");
+
+	// Загрузка скайбокса
+	std::vector <string> textures = {
+		"Textures/skybox/skybox_RT.jpg", "Textures/skybox/skybox_LF.jpg",
+		"Textures/skybox/skybox_UP.jpg", "Textures/skybox/skybox_DN.jpg",
+		"Textures/skybox/skybox_FR.jpg", "Textures/skybox/skybox_BK.jpg",
+	};
+	GLuint skybox = loadSkyBox(textures);
+
+	// Загрузка моделей
+	Model myearth("Models/earth.obj"), moon("Models/moon.obj"), box("Models/wall.obj"), skycube("Models/cube.obj");
 
 	// Создание источников света
 	DirectedLight dir_light = {
-		glm::normalize(glm::vec3(1.0f, -1.0f, 0.0f)),
+		glm::normalize(glm::vec3(0.0f, 0.0f, -1.0f)),
 		glm::vec3(0.03f, 0.02f, 0.01f),
-		glm::vec3(0.7f, 0.6f, 0.6f),
-		glm::vec3(1.0f, 0.8f, 0.5f)
+		glm::vec3(0.8f, 0.6f, 0.6f),
+		glm::vec3(1.0f, 0.5f, 0.0f)
 	};
 	PointLight point_light = {
 		glm::vec3(1.0f, 1.0f, -1.0f),
@@ -211,12 +249,14 @@ int main()
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,  0.0f,  1.0f,  0.0f,
 	};
 
-	glm::mat4 projection, light_projection, view, light_view, light_space, model, box_model;
+	// Матрицы перехода
+	glm::mat4 projection, light_projection, view, light_view, light_space, model, moon_model;
 	projection = glm::perspective(glm::radians(50.0f), (GLfloat)SCR_WIDTH / (GLfloat)SCR_HEIGHT, 0.1f, 100.0f);
-	light_projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 10.0f);
-	light_view = glm::lookAt(-dir_light.dir * glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f), global_up);
+	light_projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, 1.0f, 20.0f);
+	light_view = glm::lookAt(-dir_light.dir * glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f), global_up);
 	light_space = light_projection * light_view;
 
+	// Настройка шейдеров
 	depth_shader.use();
 	depth_shader.setUniform("light_space", light_space);
 
@@ -239,6 +279,10 @@ int main()
 	light_shader.setUniform("projection", projection);
 	light_shader.setUniform("light_color", point_light.specular_intensity);
 
+	sky_shader.use();
+	sky_shader.setUniform("projection", projection);
+	sky_shader.setUniform("skybox", 16);
+
 	// Основной цикл рендеринга
 	while (!glfwWindowShouldClose(window))
 	{
@@ -252,6 +296,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//point_light.pos = glm::vec3(2.5f, 1.0f * sin(time_scale * current_time / 2), 1.0f * cos(time_scale * current_time / 2));
+		GLfloat T = time_scale * current_time;
 
 		view = camera.getLookAt();
 		
@@ -259,9 +304,9 @@ int main()
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
 		model = glm::rotate(model, time_scale * current_time / 2, glm::vec3(0.0f, 1.0f, 0.0f));
-		box_model = glm::mat4(1.0f);
-		box_model = glm::translate(box_model, glm::vec3(0.0f, -3.0f, 0.0f));
-		box_model = glm::scale(box_model, glm::vec3(20.0f, 1.0f, 20.0f));
+		moon_model = glm::mat4(1.0f);
+		moon_model = glm::translate(moon_model, glm::vec3(3.0 * sin(T), 0.0f, 5.0 * cos(T)));
+		moon_model = glm::scale(moon_model, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		// Рендеринг в карту глубины
 		glCullFace(GL_FRONT);
@@ -273,8 +318,8 @@ int main()
 		depth_shader.setUniform("view", view);
 
 		myearth.render(depth_shader);
-		depth_shader.setUniform("model", box_model);
-		box.render(depth_shader);
+		depth_shader.setUniform("model", moon_model);
+		moon.render(depth_shader);
 		glCullFace(GL_BACK);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		
@@ -290,8 +335,19 @@ int main()
 		shader.setUniform("shadow_map", 15);
 
 		myearth.render(shader);
-		shader.setUniform("model", box_model);
-		box.render(shader);
+		shader.setUniform("model", moon_model);
+		moon.render(shader);
+
+		glDepthFunc(GL_LEQUAL);
+		glm::mat4 sky_view = glm::mat4(glm::mat3(view));
+		sky_shader.use();
+		sky_shader.setUniform("view", sky_view);
+		sky_shader.setUniform("projection", projection);
+
+		glActiveTexture(GL_TEXTURE16);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+		skycube.render(sky_shader);
+		glDepthFunc(GL_LESS);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
