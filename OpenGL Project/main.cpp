@@ -20,13 +20,6 @@
 
 GLfloat current_time = 0.0f, last_time = 0.0f, frame_time, time_scale = 1.0f;
 
-struct Material 
-{
-	Texture2D diffuse_map;
-	Texture2D specular_map;
-	Texture2D normal_map;
-	GLfloat shininess;
-};
 struct DirectedLight 
 {
 	glm::vec3 dir;
