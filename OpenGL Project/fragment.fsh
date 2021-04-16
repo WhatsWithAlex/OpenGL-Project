@@ -62,7 +62,8 @@ vec3 calculateDirLight(DirectedLight light, vec3 normal, vec3 frag_pos)
 
 	vec3 ambient_light = light.ambient_intensity * vec3(texture(material.diffuse_map[0], vert_tex_coords));
 
-	vec3 emission_light = vec3(texture(material.emission_map[0], vert_tex_coords));
+	float emission = max(dot(light_dir, normal), 0.0);
+	vec3 emission_light = emission * vec3(texture(material.emission_map[0], vert_tex_coords));
 
 	float diffuse = max(dot(-light_dir, normal), 0.0);
 	vec3 diffuse_light = diffuse * light.diffuse_intensity * vec3(texture(material.diffuse_map[0], vert_tex_coords));
@@ -78,7 +79,7 @@ vec3 calculateDirLight(DirectedLight light, vec3 normal, vec3 frag_pos)
 
 vec3 calculatePointLight(PointLight light, vec3 normal, vec3 frag_pos) 
 {
-	vec3 light_pos = vec3(view * vec4(light.pos, 1.0f));
+	vec3 light_pos = vec3(view * vec4(light.pos, 1.0));
 
 	float distance = length(light_pos - frag_pos);
     float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
